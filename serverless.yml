@@ -15,8 +15,12 @@ provider:
       statements:
         - Effect: Allow
           Action:
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
             - dynamodb:PutItem
             - dynamodb:GetItem
+            - dynamodb:Scan
+            - dynamodb:Query
           Resource:
             - !GetAtt ItemsTable.Arn
   # Uncomment to easily set up a custom domain. Read the docs for more details:
