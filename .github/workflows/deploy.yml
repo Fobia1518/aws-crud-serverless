@@ -1,0 +1,39 @@
+name: Deploy Serverless API
+
+on:
+  push:
+    branches:
+      - main  #prod
+      - dev   #dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Serverless
+        run: npm install -g serverless
+
+      - name: Deploy to AWS
+        run: |
+          if [ "${GITHUB_REF##*/}" = "main" ]; then
+            echo "Deploying to PROD"
+            serverless deploy --stage prod
+          elif [ "${GITHUB_REF##*/}" = "dev" ]; then
+            echo "Deploying to DEV"
+            serverless deploy --stage dev
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
