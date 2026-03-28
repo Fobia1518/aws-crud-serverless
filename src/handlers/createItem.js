@@ -1,6 +1,7 @@
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient, PutCommand } = require("@aws-sdk/lib-dynamodb");
 const crypto = require("crypto");
+const { itemSchema } = require("../utils/schema")
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
@@ -9,12 +10,31 @@ module.exports.handler = async (event) => {
   try {
     // 1. Parser data objects
     const body = JSON.parse(event.body);
+
+    // 2. Validate Data
+    const validation = itemSchema.safeParse(body);
     
-    // 2. Created object to save
+    if (!validation.success) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          message: "Validation Error",
+          errors: validation.error.errors.map(err => ({
+            field: err.path[0],
+            message: err.message
+          }))
+        }),
+      };
+    }
+
+    const { name, price, description } = validation.data;
+
+    // 3. Created object to save
     const newItem = {
       id: crypto.randomUUID(),
-      name: body.name,
-      price: body.price,
+      name,
+      price,
+      description: description || "No description provided",
       createdAt: new Date().toISOString(),
     };
 
