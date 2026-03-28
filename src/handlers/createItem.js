@@ -54,7 +54,11 @@ module.exports.handler = async (event) => {
     console.error(error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: "Error creating item", error: error.message }),
+      body: JSON.stringify({ 
+        message: "Internal Server Error", 
+        error: error.message,
+        stack: error.stack 
+      }),
     };
   }
 };
