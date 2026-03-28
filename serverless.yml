@@ -1,5 +1,5 @@
 # "org" ensures this Service is used with the correct Serverless Framework Access Key.
-# org: fobia
+org: fobia
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: aws-crud-serverless
 frameworkVersion: '4.33.0'
@@ -8,12 +8,40 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
-  provider:
-    stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'dev'}
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+          Resource:
+            - !GetAtt ItemsTable.Arn
   # Uncomment to easily set up a custom domain. Read the docs for more details:
   # https://www.serverless.com/framework/docs/providers/aws/guide/domains
   # domain: api.example.com
 
+##Database dynamoDB
+custom:
+  tableName: 'items-table-${sls:stage}'
+
+resources:
+  Resources:
+    ItemsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom:tableName}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+##API CRUD        
 functions:
   createItem:
     handler: src/handlers/createItem.handler
