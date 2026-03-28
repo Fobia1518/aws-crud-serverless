@@ -49,3 +49,33 @@ functions:
       - httpApi:
           path: /items
           method: post
+
+  putItem:
+    handler: src/handlers/putItem.handler
+    events:
+      - httpApi:
+          path: /items
+          method: put
+
+  deleteItem:
+    handler: src/handlers/deleteItem.handler
+    events:
+      - httpApi:
+          path: /items
+          method: delete
+
+  getItem:
+    handler: src/handlers/getItem.handler
+    events:
+      - httpApi:
+          path: /items/{id}
+          method: get
+
+  getAllItems:
+    handler: src/handlers/getAllItems.handler
+    events:
+      - httpApi:
+          path: /items
+          method: get
+
+
