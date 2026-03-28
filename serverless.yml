@@ -10,6 +10,9 @@ provider:
   region: us-east-1
   stage: ${opt:stage, 'dev'}
 
+  environment:
+    ITEMS_TABLE: ${self:custom.tableName}
+
   iam:
     role:
       statements:
