@@ -2,6 +2,7 @@
 org: fobia
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: aws-crud-serverless
+frameworkVersion: '4.33.0'
 
 provider:
   name: aws
