@@ -2,7 +2,7 @@
 org: fobia
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: aws-crud-serverless
-frameworkVersion: '4.33.0'
+frameworkVersion: "4.33.0"
 
 provider:
   name: aws
@@ -13,7 +13,7 @@ provider:
 
   environment:
     ITEMS_TABLE: ${self:custom.tableName}
-    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID} 
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
 
   iam:
@@ -42,13 +42,13 @@ provider:
       cognitoAuth:
         type: jwt
         identitySource: $request.header.Authorization
-        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/${env:COGNITO_USER_POOL_ID} 
+        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/${env:COGNITO_USER_POOL_ID}
         audience:
           - ${env:COGNITO_CLIENT_ID}
 
 ##Database dynamoDB
 custom:
-  tableName: 'items-table-${sls:stage}'
+  tableName: "items-table-${sls:stage}"
 
 resources:
   Resources:
@@ -59,12 +59,22 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
+          - AttributeName: category # index
+            AttributeType: S
         KeySchema:
           - AttributeName: id
-            KeyType: HASH
+            KeyType: HASH # Unique PK
         BillingMode: PAY_PER_REQUEST
 
-##API CRUD        
+        GlobalSecondaryIndexes:
+          - IndexName: CategoryIndex
+            KeySchema:
+              - AttributeName: category
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+##API CRUD
 functions:
   createItem:
     handler: src/handlers/createItem.handler
