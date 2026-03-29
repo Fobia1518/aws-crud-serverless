@@ -45,10 +45,10 @@ module.exports.handler = async (event) => {
 
     return {
       statusCode: 201,
-      body:{
-        message:"Item created successfully",
-        data: newItem
-      }
+      body: JSON.stringify({
+        message: "Item created successfully",
+        item: newItem,
+      }),
     };
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -56,11 +56,11 @@ module.exports.handler = async (event) => {
     console.error(error);
     return {
       statusCode: statusCode,
-      body: {
-        status: "error",
-        message: message,
-        ...(error.details && { details: error.details }) 
-      }
+      body: JSON.stringify({ 
+        message: "Internal Server Error", 
+        error: error.message,
+        stack: error.stack 
+      }),
     };
   }
 };
