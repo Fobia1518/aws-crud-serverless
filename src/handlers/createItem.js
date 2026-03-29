@@ -51,13 +51,13 @@ module.exports.handler = async (event) => {
       }),
     };
   } catch (error) {
+    const statusCode = error.statusCode || 500;
+    const message = error.message || "Internal Server Error";
     console.error(error);
     return {
-      statusCode: 500,
+      statusCode: statusCode,
       body: JSON.stringify({ 
-        message: "Internal Server Error", 
-        error: error.message,
-        stack: error.stack 
+        message, 
       }),
     };
   }

@@ -12,6 +12,8 @@ provider:
 
   environment:
     ITEMS_TABLE: ${self:custom.tableName}
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID} 
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
 
   iam:
     role:
@@ -26,9 +28,15 @@ provider:
             - dynamodb:Query
           Resource:
             - !GetAtt ItemsTable.Arn
-  # Uncomment to easily set up a custom domain. Read the docs for more details:
-  # https://www.serverless.com/framework/docs/providers/aws/guide/domains
-  # domain: api.example.com
+
+  httpApi:
+    authorizers:
+      cognitoAuth:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/${env:COGNITO_USER_POOL_ID} 
+        audience:
+          - ${env:COGNITO_CLIENT_ID}
 
 ##Database dynamoDB
 custom:
@@ -56,6 +64,8 @@ functions:
       - httpApi:
           path: /items
           method: post
+          authorizer:
+            name: cognitoAuth
 
   putItem:
     handler: src/handlers/putItem.handler
@@ -63,6 +73,8 @@ functions:
       - httpApi:
           path: /items
           method: put
+          authorizer:
+            name: cognitoAuth
 
   deleteItem:
     handler: src/handlers/deleteItem.handler
@@ -70,6 +82,8 @@ functions:
       - httpApi:
           path: /items
           method: delete
+          authorizer:
+            name: cognitoAuth
 
   getItem:
     handler: src/handlers/getItem.handler
@@ -77,6 +91,8 @@ functions:
       - httpApi:
           path: /items/{id}
           method: get
+          authorizer:
+            name: cognitoAuth
 
   getAllItems:
     handler: src/handlers/getAllItems.handler
@@ -84,5 +100,5 @@ functions:
       - httpApi:
           path: /items
           method: get
-
-
+          authorizer:
+            name: cognitoAuth
