@@ -57,7 +57,9 @@ module.exports.handler = async (event) => {
     return {
       statusCode: statusCode,
       body: {
-        message
+        status: "error",
+        message: message,
+        ...(error.details && { details: error.details }) 
       }
     };
   }
