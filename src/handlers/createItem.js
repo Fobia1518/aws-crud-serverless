@@ -7,6 +7,7 @@ const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
 module.exports.handler = async (event) => {
+  console.log("🚀 Start create item lambda");
   try {
     // 1. Parser data objects
     const body = JSON.parse(event.body);
@@ -44,22 +45,22 @@ module.exports.handler = async (event) => {
     }));
 
     return {
-      statusCode: 201,
-      body: {
-        message: "Item created successfully",
-        item: newItem,
-      },
+      statusCode: 201
+      // body: {
+      //   message: "Item created successfully",
+      //   item: newItem,
+      // }
     };
   } catch (error) {
+    console.error(error);
     const statusCode = error.statusCode || 500;
     const message = error.message || "Internal Server Error";
-    console.error(error);
     return {
-      statusCode: statusCode,
-      body: {
-        status: "error",
-        message: message
-      },
+      statusCode: statusCode
+      // body: {
+      //   status: "error",
+      //   message: message
+      // }
     };
   }
 };
