@@ -48,3 +48,6 @@ jobs:
           # Required for Serverless Framework v4 authentication
           SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
           SERVERLESS_LICENSE_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+          # Variables env cognito
+          COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
+          COGNITO_CLIENT_ID: ${{ vars.COGNITO_CLIENT_ID }}

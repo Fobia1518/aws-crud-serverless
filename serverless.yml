@@ -2,50 +2,121 @@
 org: fobia
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: aws-crud-serverless
-frameworkVersion: '4.33.0'
+frameworkVersion: "4.33.0"
 
 provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
   stage: ${opt:stage, 'dev'}
+  logRetentionInDays: 7
+
+  environment:
+    ITEMS_TABLE: ${self:custom.tableName}
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
 
   iam:
     role:
       statements:
         - Effect: Allow
           Action:
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
             - dynamodb:PutItem
             - dynamodb:GetItem
+            - dynamodb:Scan
+            - dynamodb:Query
           Resource:
             - !GetAtt ItemsTable.Arn
-  # Uncomment to easily set up a custom domain. Read the docs for more details:
-  # https://www.serverless.com/framework/docs/providers/aws/guide/domains
-  # domain: api.example.com
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource:
+            - "arn:aws:logs:${aws:region}:${aws:accountId}:log-group:/aws/lambda/*"
+
+  httpApi:
+    authorizers:
+      cognitoAuth:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: https://cognito-idp.us-east-1.amazonaws.com/${env:COGNITO_USER_POOL_ID}
+        audience:
+          - ${env:COGNITO_CLIENT_ID}
 
 ##Database dynamoDB
 custom:
-  tableName: 'items-table-${sls:stage}'
+  tableName: "items-table-${sls:stage}"
 
 resources:
   Resources:
     ItemsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:custom:tableName}
+        TableName: ${self:custom.tableName}
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
+          - AttributeName: category # index
+            AttributeType: S
         KeySchema:
           - AttributeName: id
-            KeyType: HASH
+            KeyType: HASH # Unique PK
         BillingMode: PAY_PER_REQUEST
 
-##API CRUD        
+        GlobalSecondaryIndexes:
+          - IndexName: CategoryIndex
+            KeySchema:
+              - AttributeName: category
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+##API CRUD
 functions:
   createItem:
     handler: src/handlers/createItem.handler
     events:
       - httpApi:
           path: /items
-          method: post
+          method: POST
+          authorizer:
+            name: cognitoAuth
+
+  updateItem:
+    handler: src/handlers/updateItem.handler
+    events:
+      - httpApi:
+          path: /items/{id}
+          method: PUT
+          authorizer:
+            name: cognitoAuth
+
+  deleteItem:
+    handler: src/handlers/deleteItem.handler
+    events:
+      - httpApi:
+          path: /items/{id}
+          method: DELETE
+          authorizer:
+            name: cognitoAuth
+
+  getItem:
+    handler: src/handlers/getItem.handler
+    events:
+      - httpApi:
+          path: /items/{id}
+          method: GET
+          authorizer:
+            name: cognitoAuth
+
+  getAllItems:
+    handler: src/handlers/getAllItems.handler
+    events:
+      - httpApi:
+          path: /items
+          method: GET
+          authorizer:
+            name: cognitoAuth
