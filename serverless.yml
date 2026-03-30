@@ -85,7 +85,7 @@ functions:
           authorizer:
             name: cognitoAuth
 
-  putItem:
+  updateItem:
     handler: src/handlers/updateItem.handler
     events:
       - httpApi:
