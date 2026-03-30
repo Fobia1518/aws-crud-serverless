@@ -48,6 +48,8 @@ module.exports.handler = async (event) => {
     expressionAttributeNames["#updatedAt"] = "updatedAt";
     expressionAttributeValues[":updatedAt"] = new Date().toISOString();
 
+    expressionAttributeNames["#id"] = "id";
+
     const params = {
       TableName: process.env.ITEMS_TABLE,
       Key: { id },
@@ -55,7 +57,7 @@ module.exports.handler = async (event) => {
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: "ALL_NEW",
-      ConditionExpression: "attribute_exists(id)", // Ensure item exists before updating
+      ConditionExpression: "attribute_exists(#id)", // Ensure item exists before updating
     };
 
     const result = await docClient.send(new UpdateCommand(params));
@@ -70,11 +72,16 @@ module.exports.handler = async (event) => {
     };
   } catch (error) {
     if (error.name === "ConditionalCheckFailedException") {
+      console.error(
+        "Error updating item ConditionalCheckFailedException:",
+        error,
+      );
       return {
         statusCode: 404,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: `Item with id ${id} does not exist. Update failed.`,
+          error: error.message,
+          message: `Item with id ${event.pathParameters.id} does not exist. Update failed.`,
         }),
       };
     }
