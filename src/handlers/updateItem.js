@@ -55,6 +55,7 @@ module.exports.handler = async (event) => {
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: "ALL_NEW",
+      ConditionExpression: "attribute_exists(id)", // Ensure item exists before updating
     };
 
     const result = await docClient.send(new UpdateCommand(params));
@@ -68,7 +69,18 @@ module.exports.handler = async (event) => {
       }),
     };
   } catch (error) {
+    if (error.name === "ConditionalCheckFailedException") {
+      return {
+        statusCode: 404,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `Item with id ${id} does not exist. Update failed.`,
+        }),
+      };
+    }
+
     console.error("Error updating item:", error);
+
     const statusCode = error.statusCode || 500;
     const message = error.message || "Internal Server Error";
     return {
