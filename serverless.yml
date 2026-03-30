@@ -81,16 +81,16 @@ functions:
     events:
       - httpApi:
           path: /items
-          method: post
+          method: POST
           authorizer:
             name: cognitoAuth
 
   putItem:
-    handler: src/handlers/putItem.handler
+    handler: src/handlers/updateItem.handler
     events:
       - httpApi:
-          path: /items
-          method: put
+          path: /items/{id}
+          method: PUT
           authorizer:
             name: cognitoAuth
 
@@ -98,8 +98,8 @@ functions:
     handler: src/handlers/deleteItem.handler
     events:
       - httpApi:
-          path: /items
-          method: delete
+          path: /items/{id}
+          method: DELETE
           authorizer:
             name: cognitoAuth
 
@@ -108,7 +108,7 @@ functions:
     events:
       - httpApi:
           path: /items/{id}
-          method: get
+          method: GET
           authorizer:
             name: cognitoAuth
 
@@ -117,6 +117,6 @@ functions:
     events:
       - httpApi:
           path: /items
-          method: get
+          method: GET
           authorizer:
             name: cognitoAuth
