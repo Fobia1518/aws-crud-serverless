@@ -1,69 +1,58 @@
-<!--
-title: 'AWS Simple HTTP Endpoint example in NodeJS'
-description: 'This template demonstrates how to make a simple HTTP API with Node.js running on AWS Lambda and API Gateway using the Serverless Framework.'
-layout: Doc
-framework: v4
-platform: AWS
-language: nodeJS
-authorLink: 'https://github.com/serverless'
-authorName: 'Serverless, Inc.'
-authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4'
--->
+# 🚀 AWS Inventory Serverless API - Code Challenge 5
 
-# Serverless Framework Node HTTP API on AWS
+A production-ready RESTful Inventory API built with **Serverless Framework**, designed for high scalability and security using AWS native services.
 
-This template demonstrates how to make a simple HTTP API with Node.js running on AWS Lambda and API Gateway using the Serverless Framework.
+[![Serverless](https://img.shields.io/badge/serverless-v4.0+-ff5242?logo=serverless)](https://www.serverless.com/)
+[![Node.js](https://img.shields.io/badge/node-v20.x+-339933?logo=node.js)](https://nodejs.org/)
+[![DynamoDB](https://img.shields.io/badge/database-DynamoDB-4053D6?logo=amazondynamodb)](https://aws.amazon.com/dynamodb/)
 
-This template does not include any kind of persistence (database). For more advanced examples, check out the [serverless/examples repository](https://github.com/serverless/examples/) which includes Typescript, Mongo, DynamoDB and other examples.
+## 📝 Project Overview
 
-## Usage
+This system manages a product inventory with advanced features such as category filtering, cursor-based pagination, and endpoint protection via **Amazon Cognito**. The architecture follows the principle of least privilege for IAM roles and implements strict data validation.
 
-### Deployment
+---
 
-In order to deploy the example, you need to run the following command:
+## 🛠️ Tech Stack
 
-```
-serverless deploy
-```
+- **Runtime:** Node.js 20.x
+- **Framework:** Serverless Framework
+- **Database:** Amazon DynamoDB (NoSQL)
+- **Validation:** [Zod](https://zod.dev/) (Strict type safety)
+- **Security:** IAM Roles & Cognito Authorizer
+- **Observability:** AWS CloudWatch Logs
 
-After running deploy, you should see output similar to:
+---
 
-```
-Deploying "serverless-http-api" to stage "dev" (us-east-1)
+## 🛣️ API Endpoints
 
-✔ Service deployed to stack serverless-http-api-dev (91s)
+### 📦 Inventory Management
 
-endpoint: GET - https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/
-functions:
-  hello: serverless-http-api-dev-hello (1.6 kB)
-```
+| Method   | Endpoint      | Description                                                  | Auth Required     |
+| :------- | :------------ | :----------------------------------------------------------- | :---------------- |
+| `POST`   | `/items`      | Create a new product.                                        | **Yes (Cognito)** |
+| `GET`    | `/items`      | List products (supports `limit`, `nextKey`, and `category`). | **Yes (Cognito)** |
+| `GET`    | `/items/{id}` | Retrieve detailed information for a specific item.           | **Yes (Cognito)** |
+| `PUT`    | `/items/{id}` | Update specific fields of an existing item.                  | **Yes (Cognito)** |
+| `DELETE` | `/items/{id}` | Permanently remove an item from the inventory.               | **Yes (Cognito)** |
 
-_Note_: In current form, after deployment, your API is public and can be invoked by anyone. For production deployments, you might want to configure an authorizer. For details on how to do that, refer to [HTTP API (API Gateway V2) event docs](https://www.serverless.com/framework/docs/providers/aws/events/http-api).
+---
 
-### Invocation
+## ⚙️ Advanced Features & Implementation
 
-After successful deployment, you can call the created application via HTTP:
+### 1. Efficient Pagination & Filtering
 
-```
-curl https://xxxxxxx.execute-api.us-east-1.amazonaws.com/
-```
+The `GET /items` endpoint implements **Cursor-based Pagination** using `LastEvaluatedKey` encoded in `Base64`. This prevents "Full Table Scans" and ensures consistent performance as the database grows. Filtering by category is optimized using a **Global Secondary Index (GSI)**.
 
-Which should result in response similar to:
+### 2. Atomic Updates & Upsert Protection
 
-```json
-{ "message": "Go Serverless v4! Your function executed successfully!" }
-```
+To prevent accidental record creation during updates, the `updateItem` handler uses a **DynamoDB ConditionExpression** (`attribute_exists(#id)`). If the ID does not exist, the API returns a proper `404 Not Found` instead of creating a malformed entry.
 
-### Local development
+### 3. Dynamic Update Expressions
 
-The easiest way to develop and test your function is to use the `dev` command:
+The update logic is fully dynamic. It maps the request body keys to `ExpressionAttributeNames` and `ExpressionAttributeValues` automatically, allowing partial updates (PATCH-style) without hardcoding every field.
 
-```
-serverless dev
-```
+### 4. Schema Validation
 
-This will start a local emulator of AWS Lambda and tunnel your requests to and from AWS Lambda, allowing you to interact with your function as if it were running in the cloud.
+Leveraging **Zod**, the API enforces strict data schemas. It ensures that `price` is a positive number and `category` belongs to an allowed enumeration before any database interaction occurs.
 
-Now you can invoke the function as before, but this time the function will be executed locally. Now you can develop your function locally, invoke it, and see the results immediately without having to re-deploy.
-
-When you are done developing, don't forget to run `serverless deploy` to deploy the function to the cloud.
+---
