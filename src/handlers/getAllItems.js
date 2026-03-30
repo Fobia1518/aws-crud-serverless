@@ -63,10 +63,16 @@ module.exports.handler = async (event) => {
     };
   } catch (error) {
     console.error("Error fetching inventory:", error);
+    const statusCode = error.statusCode || 500;
+    const message = error.message || "Internal Server Error";
     return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "Error", error: error.message }),
+      statusCode: statusCode,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: message,
+      }),
     };
   }
 };
