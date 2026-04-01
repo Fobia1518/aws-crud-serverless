@@ -56,3 +56,47 @@ The update logic is fully dynamic. It maps the request body keys to `ExpressionA
 Leveraging **Zod**, the API enforces strict data schemas. It ensures that `price` is a positive number and `category` belongs to an allowed enumeration before any database interaction occurs.
 
 ---
+
+## 🔐 Environment Variables
+
+The following variables are required for deployment and local testing:
+
+- `COGNITO_USER_POOL_ID`: The ID of your Amazon Cognito User Pool.
+- `COGNITO_CLIENT_ID`: The App Client ID for the User Pool.
+- `ITEMS_TABLE`: (Optional) Custom name for the DynamoDB table.
+
+---
+
+### Create Item Example
+
+**POST** `/items`
+**Body:**
+
+```json
+{
+  "name": "Mechanical Keyboard",
+  "price": 89.99,
+  "category": "electronics",
+  "description": "RGB Backlit"
+}
+```
+
+### Response (201):
+
+```json
+{
+  "message": "Item created successfully",
+  "item": { "id": "uuid-v4", ... }
+}
+```
+
+---
+
+### Error Handling
+
+| Status Code | Description    | Reason                                          |
+| :---------- | :------------- | :---------------------------------------------- |
+| 400         | Bad Request    | Validation error (Zod) or empty body.           |
+| 401         | Unauthorized   | Missing or expired Cognito JWT token.           |
+| 404         | Not Found      | The provided ID does not exist in the database. |
+| 500         | Internal Error | Unexpected server or AWS service error.         |

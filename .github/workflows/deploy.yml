@@ -1,37 +1,56 @@
+# GitHub Actions Workflow for automated Serverless deployment.
+# This pipeline handles the lifecycle from code push to AWS deployment.
 name: Deploy Serverless API
 
+# TRIGGER CONFIGURATION
+# The workflow starts automatically when a push is made to 'main' or 'dev' branches.
 on:
   push:
     branches:
-      - main  #prod
-      - dev   #dev
+      - main # Production branch
+      - dev # Development branch
 
 jobs:
   deploy:
+    # Use the latest Ubuntu runner provided by GitHub.
     runs-on: ubuntu-latest
 
+    # ENVIRONMENT SELECTION
+    # Dynamically selects the GitHub Environment for Secrets/Variables context.
+    # Logic: If the branch is 'main', use 'SLS Guru' (Prod), otherwise use 'SLS Guru DEV'.
     environment: ${{ github.ref_name == 'main' && 'SLS Guru' || 'SLS Guru DEV' }}
 
     steps:
+      # 1. Source Code Checkout
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # 2. Node.js Setup
+      # Ensures the environment matches the Lambda runtime (v20).
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
+      # 3. Dependency Management
       - name: Install dependencies
         run: npm install
 
+      # 4. Tooling Setup
+      # Installs Serverless Framework globally to enable the 'serverless' command.
       - name: Install Serverless
         run: npm install -g serverless
 
-      - name: Debug branch #DEBUG STEP
+      # 5. Pipeline Observability
+      # Prints branch info to the GitHub Actions log for troubleshooting.
+      - name: Debug branch
         run: |
           echo "GITHUB_REF: $GITHUB_REF"
           echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
 
+      # 6. Deployment Logic (Multi-stage)
+      # Executes 'serverless deploy' with the corresponding --stage flag.
+      # This ensures infrastructure isolation between environments.
       - name: Deploy to AWS
         run: |
           if [ "${GITHUB_REF##*/}" = "main" ]; then
@@ -42,12 +61,13 @@ jobs:
             serverless deploy --stage dev
           fi
         env:
-          # Required for AWS deployment credentials
+          # SECURITY: Credentials retrieved from GitHub Secrets (Settings > Secrets and variables)
+          # AWS_ACCESS_KEY_ID & SECRET: IAM User credentials for resource creation.
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # Required for Serverless Framework v4 authentication
+          # SLS AUTH: Required for Serverless Framework v4 dashboard and license validation.
           SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
           SERVERLESS_LICENSE_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
-          # Variables env cognito
+          # INFRASTRUCTURE PARAMS: Cognito details passed as environment variables.
           COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
           COGNITO_CLIENT_ID: ${{ vars.COGNITO_CLIENT_ID }}

@@ -4,18 +4,25 @@ org: fobia
 service: aws-crud-serverless
 frameworkVersion: "4.33.0"
 
+# PROVIDER CONFIGURATION
+# Defines the cloud provider (AWS), runtime environment, and global settings.
 provider:
   name: aws
   runtime: nodejs20.x
   region: us-east-1
   stage: ${opt:stage, 'dev'}
+  # Optimization: Log retention limits costs and avoids clutter in CloudWatch
   logRetentionInDays: 7
 
+  # Environment variables accessible within Lambda functions
   environment:
     ITEMS_TABLE: ${self:custom.tableName}
     COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
 
+  # IAM ROLE STATEMENTS
+  # Implements the Principle of Least Privilege (PoLP).
+  # Only grants necessary permissions for DynamoDB operations on the specific table.
   iam:
     role:
       statements:
@@ -37,6 +44,8 @@ provider:
           Resource:
             - "arn:aws:logs:${aws:region}:${aws:accountId}:log-group:/aws/lambda/*"
 
+  # HTTP API AUTHORIZER
+  # Configures Amazon Cognito as a JWT Authorizer for the HTTP API endpoints.
   httpApi:
     authorizers:
       cognitoAuth:
@@ -46,10 +55,14 @@ provider:
         audience:
           - ${env:COGNITO_CLIENT_ID}
 
-##Database dynamoDB
+# CUSTOM VARIABLES
+# Shared configuration variables for the service.
 custom:
+  # Dynamic table name based on the deployment stage (e.g., items-table-dev or items-table-prod).
   tableName: "items-table-${sls:stage}"
 
+# INFRASTRUCTURE RESOURCES (CloudFormation)
+# Defines the underlying AWS resources like DynamoDB.
 resources:
   Resources:
     ItemsTable:
@@ -59,22 +72,30 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-          - AttributeName: category # index
+          - AttributeName: category # Partition Key for GSI
             AttributeType: S
         KeySchema:
           - AttributeName: id
-            KeyType: HASH # Unique PK
+            KeyType: HASH # Partition Key (Unique ID)
+        # BillingMode: PAY_PER_REQUEST is ideal for serverless to optimize costs (On-demand)
         BillingMode: PAY_PER_REQUEST
 
+        # GLOBAL SECONDARY INDEX (GSI)
+        # Enables efficient filtering by 'category' without performing a full table scan.
         GlobalSecondaryIndexes:
           - IndexName: CategoryIndex
             KeySchema:
               - AttributeName: category
                 KeyType: HASH
             Projection:
+              # ProjectionType: ALL ensures all item attributes are available in the index query
               ProjectionType: ALL
 
-##API CRUD
+# LAMBDA FUNCTIONS
+# Defines the mapping between HTTP endpoints and handler code.
+
+# SECURITY: Enforces JWT validation via Amazon Cognito.
+# The request must include a valid 'Authorization' header with a Bearer token.
 functions:
   createItem:
     handler: src/handlers/createItem.handler
